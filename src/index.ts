@@ -71,9 +71,6 @@ async function main (): Promise<void> {
       exec.exec(cmd[0], cmd.slice(1))
     }
 
-    // Now we create a release, we set dry mode to false
-    await runSemanticReleaseGo(binPath, false)
-
     // Setup git user name and email
     await exec.exec('git', ['config', 'user.email', gitUserEmail])
     await exec.exec('git', ['config', 'user.name', gitUserName])
@@ -89,6 +86,10 @@ async function main (): Promise<void> {
     // We expect this git push to not trigger another action
     // otherwise, actions will be created recursively
     await exec.exec('git', ['push'])
+
+    // Now we create a release
+    // Note that we set dry mode to false, so this is an actual release
+    await runSemanticReleaseGo(binPath, false)
 
     core.debug(`setting version to ${parsedVersion.version}`)
     core.setOutput('version', parsedVersion.version)

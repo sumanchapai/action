@@ -24397,7 +24397,6 @@ async function main() {
       const cmd = core.getInput("pre-release-post-dry-cmd").split(/\s+/);
       exec.exec(cmd[0], cmd.slice(1));
     }
-    await runSemanticReleaseGo(binPath, false);
     await exec.exec("git", ["config", "user.email", gitUserEmail]);
     await exec.exec("git", ["config", "user.name", gitUserName]);
     core.info(`pushing ${releasedVersionFileName} file to git`);
@@ -24407,6 +24406,7 @@ async function main() {
     }
     await exec.exec("git", ["commit", "-m", "release: update version"]);
     await exec.exec("git", ["push"]);
+    await runSemanticReleaseGo(binPath, false);
     core.debug(`setting version to ${parsedVersion.version}`);
     core.setOutput("version", parsedVersion.version);
     core.setOutput("version_major", `${parsedVersion.major}`);
