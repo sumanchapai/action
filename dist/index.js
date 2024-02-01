@@ -24374,7 +24374,7 @@ function getBooleanInput2(name) {
 async function main() {
   try {
     const changelogFile = core.getInput("changelog-file") || ".generated-go-semantic-release-changelog.md";
-    let args = ["--version-file", "true", "--changelog", changelogFile];
+    let args = ["--version-file", "--changelog", changelogFile];
     if (core.getInput("github-token")) {
       args.push("--token");
       args.push(core.getInput("github-token"));
@@ -24432,7 +24432,6 @@ async function main() {
     const generatedChangelog = (await import_fs.promises.readFile(changelogFile)).toString("utf8");
     const versionFilename = core.getInput("dry") ? ".version-unreleased" : ".version";
     const version2 = (await import_fs.promises.readFile(versionFilename)).toString("utf8");
-    await import_fs.promises.unlink(versionFilename);
     const parsedVersion = new import_semver.SemVer(version2);
     core.setOutput("changelog", generatedChangelog);
     core.debug(`setting version to ${parsedVersion.version}`);
