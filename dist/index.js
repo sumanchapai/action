@@ -24360,7 +24360,16 @@ async function installLatestSemRelVersion() {
   return path;
 }
 async function runSemanticReleaseGo(binPath, dry) {
-  const args = ["--version-file", "hooks", "goreleaser"];
+  const args = [
+    "--version-file",
+    // enable generating version file
+    "hooks",
+    "goreleaser",
+    // hooks is an array of strings
+    "--files-updater",
+    ""
+    // clear out default files-updater by defning it to be empty str
+  ];
   if (dry) {
     args.push("--dry");
   }
@@ -24390,6 +24399,10 @@ async function main() {
     await exec.exec("git", ["add", releasedVersionFileName]);
     await exec.exec("git", ["commit", "-m", "release: update version"]);
     await exec.exec("git", ["push"]);
+    if (core.getInput("pre-release-post-dry-cmd")) {
+      const cmd = core.getInput("pre-release-post-dry-cmd").split(/\s+/);
+      exec.exec(cmd[0], cmd.slice(1));
+    }
     await runSemanticReleaseGo(binPath, false);
     core.debug(`setting version to ${parsedVersion.version}`);
     core.setOutput("version", parsedVersion.version);

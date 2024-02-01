@@ -25,7 +25,11 @@ async function installLatestSemRelVersion (): Promise<string> {
 }
 
 async function runSemanticReleaseGo (binPath: string, dry: boolean): Promise<number> {
-  const args = ['--version-file', 'hooks', 'goreleaser']
+  const args = [
+    '--version-file', // enable generating version file
+    'hooks', 'goreleaser', // hooks is an array of strings
+    '--files-updater', '' // clear out default files-updater by defning it to be empty str
+  ]
   if (dry) {
     args.push('--dry')
   }
@@ -72,6 +76,12 @@ async function main (): Promise<void> {
     // We expect this git push to not trigger another action
     // otherwise, actions will be created recursively
     await exec.exec('git', ['push'])
+
+    // If there is a command to run, run the command
+    if (core.getInput('pre-release-post-dry-cmd')) {
+      const cmd = core.getInput('pre-release-post-dry-cmd').split(/\s+/)
+      exec.exec(cmd[0], cmd.slice(1))
+    }
 
     // Now we create a release, we set dry mode to false
     await runSemanticReleaseGo(binPath, false)

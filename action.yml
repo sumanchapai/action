@@ -7,6 +7,9 @@ inputs:
   github-token:
     description: 'github token'
     required: true
+  pre-release-post-dry-cmd:
+    description: 'command to run between dry release and actual release'
+    required: false
 outputs:
   version:
     description: 'the version of the created release'
