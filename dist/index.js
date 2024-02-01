@@ -24393,17 +24393,20 @@ async function main() {
     import_fs.promises.rename(dryVersionFileName, releasedVersionFileName);
     const version2 = (await import_fs.promises.readFile(releasedVersionFileName)).toString("utf8");
     const parsedVersion = new import_semver.SemVer(version2);
-    await exec.exec("git", ["config", "user.email", gitUserEmail]);
-    await exec.exec("git", ["config", "user.name", gitUserName]);
-    core.info(`pushing ${releasedVersionFileName} file to git`);
-    await exec.exec("git", ["add", releasedVersionFileName]);
-    await exec.exec("git", ["commit", "-m", "release: update version"]);
-    await exec.exec("git", ["push"]);
     if (core.getInput("pre-release-post-dry-cmd")) {
       const cmd = core.getInput("pre-release-post-dry-cmd").split(/\s+/);
       exec.exec(cmd[0], cmd.slice(1));
     }
     await runSemanticReleaseGo(binPath, false);
+    await exec.exec("git", ["config", "user.email", gitUserEmail]);
+    await exec.exec("git", ["config", "user.name", gitUserName]);
+    core.info(`pushing ${releasedVersionFileName} file to git`);
+    await exec.exec("git", ["add", releasedVersionFileName]);
+    if (core.getInput("files-to-commit")) {
+      await exec.exec("git", ["add", core.getInput("files-to-commit")]);
+    }
+    await exec.exec("git", ["commit", "-m", "release: update version"]);
+    await exec.exec("git", ["push"]);
     core.debug(`setting version to ${parsedVersion.version}`);
     core.setOutput("version", parsedVersion.version);
     core.setOutput("version_major", `${parsedVersion.major}`);

@@ -65,18 +65,6 @@ async function main (): Promise<void> {
     const version = (await fs.readFile(releasedVersionFileName)).toString('utf8')
     const parsedVersion = new SemVer(version)
 
-    // Setup git user name and email
-    await exec.exec('git', ['config', 'user.email', gitUserEmail])
-    await exec.exec('git', ['config', 'user.name', gitUserName])
-
-    // Push to git
-    core.info(`pushing ${releasedVersionFileName} file to git`)
-    await exec.exec('git', ['add', releasedVersionFileName])
-    await exec.exec('git', ['commit', '-m', 'release: update version'])
-    // We expect this git push to not trigger another action
-    // otherwise, actions will be created recursively
-    await exec.exec('git', ['push'])
-
     // If there is a command to run, run the command
     if (core.getInput('pre-release-post-dry-cmd')) {
       const cmd = core.getInput('pre-release-post-dry-cmd').split(/\s+/)
@@ -85,6 +73,22 @@ async function main (): Promise<void> {
 
     // Now we create a release, we set dry mode to false
     await runSemanticReleaseGo(binPath, false)
+
+    // Setup git user name and email
+    await exec.exec('git', ['config', 'user.email', gitUserEmail])
+    await exec.exec('git', ['config', 'user.name', gitUserName])
+
+    // Push to git
+    core.info(`pushing ${releasedVersionFileName} file to git`)
+    await exec.exec('git', ['add', releasedVersionFileName])
+    if (core.getInput('files-to-commit')) {
+      await exec.exec('git', ['add', core.getInput('files-to-commit')])
+    }
+    await exec.exec('git', ['commit', '-m', 'release: update version'])
+
+    // We expect this git push to not trigger another action
+    // otherwise, actions will be created recursively
+    await exec.exec('git', ['push'])
 
     core.debug(`setting version to ${parsedVersion.version}`)
     core.setOutput('version', parsedVersion.version)

@@ -10,6 +10,9 @@ inputs:
   pre-release-post-dry-cmd:
     description: 'command to run between dry release and actual release'
     required: false
+  files-to-commit:
+    description: 'addtional file to git commit. other than .version'
+    required: false
 outputs:
   version:
     description: 'the version of the created release'
