@@ -86,6 +86,7 @@ async function main (): Promise<void> {
 
     try {
       core.info('running semantic-release...')
+      core.info(`running ${binPath} ${args}`)
       await exec.exec(binPath, args)
     } catch (error) {
       if (/exit code 6\d/.test(error.message)) {
