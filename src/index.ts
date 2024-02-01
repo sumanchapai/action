@@ -6,7 +6,7 @@ import * as exec from '@actions/exec'
 import * as tc from '@actions/tool-cache'
 import { SemVer } from 'semver'
 
-function getPlatformArch (a: string, p: string): string {
+function getPlatformArch(a: string, p: string): string {
   const platform = {
     win32: 'windows'
   }
@@ -17,14 +17,14 @@ function getPlatformArch (a: string, p: string): string {
   return (platform[p] ? platform[p] : p) + '/' + (arch[a] ? arch[a] : a)
 }
 
-async function installLatestSemRelVersion (): Promise<string> {
+async function installLatestSemRelVersion(): Promise<string> {
   core.info('downloading semantic-release binary...')
   const path = await tc.downloadTool(`https://registry.go-semantic-release.xyz/downloads/${getPlatformArch(arch(), platform())}/semantic-release`)
   await fs.chmod(path, '0755')
   return path
 }
 
-function getBooleanInput (name: string): boolean {
+function getBooleanInput(name: string): boolean {
   const inputValue = core.getInput(name)
   if (!inputValue) return false
   try {
@@ -36,10 +36,10 @@ function getBooleanInput (name: string): boolean {
   }
 }
 
-async function main (): Promise<void> {
+async function main(): Promise<void> {
   try {
     const changelogFile = core.getInput('changelog-file') || '.generated-go-semantic-release-changelog.md'
-    let args = ['--version-file', '--changelog', changelogFile]
+    let args = ['--version-file', 'true', '--changelog', changelogFile]
     if (core.getInput('github-token')) {
       args.push('--token')
       args.push(core.getInput('github-token'))

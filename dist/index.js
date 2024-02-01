@@ -24374,7 +24374,7 @@ function getBooleanInput2(name) {
 async function main() {
   try {
     const changelogFile = core.getInput("changelog-file") || ".generated-go-semantic-release-changelog.md";
-    let args = ["--version-file", "--changelog", changelogFile];
+    let args = ["--version-file", "true", "--changelog", changelogFile];
     if (core.getInput("github-token")) {
       args.push("--token");
       args.push(core.getInput("github-token"));
