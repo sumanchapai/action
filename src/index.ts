@@ -98,7 +98,7 @@ async function main (): Promise<void> {
         // Setup git user name and email
         await exec.exec('git', ['config', 'user.email', gitUserEmail])
         await exec.exec('git', ['config', 'user.name', gitUserName])
-        await exec.exec('git', ['commit', 'm', 'release: update version'])
+        await exec.exec('git', ['commit', '-m', 'release: update version'])
         await exec.exec('git', ['push'])
       }
     } catch (error) {
