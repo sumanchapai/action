@@ -84,10 +84,23 @@ async function main (): Promise<void> {
     let binPath = core.getInput('bin')
     if (!binPath) binPath = await installLatestSemRelVersion()
 
+    const versionFilename = (core.getInput('dry')) ? '.version-unreleased' : '.version'
+    const gitUserEmail = (core.getInput('gitUserEmail')) || 'bot'
+    const gitUserName = (core.getInput('gitUserName')) || 'bot@example.com'
+
     try {
       core.info('running semantic-release...')
       core.info(`running ${binPath} ${args}`)
-      await exec.exec(binPath, args)
+      const statusCode = await exec.exec(binPath, args)
+      if (statusCode === 0) {
+        core.info(`pushing ${versionFilename} file to git`)
+        await exec.exec('git', ['add', versionFilename])
+        // Setup git user name and email
+        await exec.exec('git', ['config', 'user.email', gitUserEmail])
+        await exec.exec('git', ['config', 'user.name', gitUserName])
+        await exec.exec('git', ['commit', 'm', 'release: update version'])
+        await exec.exec('git', ['push'])
+      }
     } catch (error) {
       if (/exit code 6\d/.test(error.message)) {
         return
@@ -96,7 +109,6 @@ async function main (): Promise<void> {
       return
     }
     const generatedChangelog = (await fs.readFile(changelogFile)).toString('utf8')
-    const versionFilename = (core.getInput('dry')) ? '.version-unreleased' : '.version'
     const version = (await fs.readFile(versionFilename)).toString('utf8')
     const parsedVersion = new SemVer(version)
     core.setOutput('changelog', generatedChangelog)

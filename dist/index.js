@@ -24418,10 +24418,21 @@ async function main() {
     let binPath = core.getInput("bin");
     if (!binPath)
       binPath = await installLatestSemRelVersion();
+    const versionFilename = core.getInput("dry") ? ".version-unreleased" : ".version";
+    const gitUserEmail = core.getInput("gitUserEmail") || "bot";
+    const gitUserName = core.getInput("gitUserName") || "bot@example.com";
     try {
       core.info("running semantic-release...");
       core.info(`running ${binPath} ${args}`);
-      await exec.exec(binPath, args);
+      const statusCode = await exec.exec(binPath, args);
+      if (statusCode === 0) {
+        core.info(`pushing ${versionFilename} file to git`);
+        await exec.exec("git", ["add", versionFilename]);
+        await exec.exec("git", ["config", "user.email", gitUserEmail]);
+        await exec.exec("git", ["config", "user.name", gitUserName]);
+        await exec.exec("git", ["commit", "m", "release: update version"]);
+        await exec.exec("git", ["push"]);
+      }
     } catch (error) {
       if (/exit code 6\d/.test(error.message)) {
         return;
@@ -24430,7 +24441,6 @@ async function main() {
       return;
     }
     const generatedChangelog = (await import_fs.promises.readFile(changelogFile)).toString("utf8");
-    const versionFilename = core.getInput("dry") ? ".version-unreleased" : ".version";
     const version2 = (await import_fs.promises.readFile(versionFilename)).toString("utf8");
     const parsedVersion = new import_semver.SemVer(version2);
     core.setOutput("changelog", generatedChangelog);
