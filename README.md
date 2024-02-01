@@ -1,4 +1,7 @@
-This is a fork from [go-semantic-release/action](https://github.com/go-semantic-release/action/). There were a couple features that were lacking for my personal use thus I created a fork. Namely, when a release is created, I needed the new version name to be written somewhere so that  I could easily implement a version command in the command line appliation that I am writing (or even a go package).   This is possible in the [semantic-release](https://github.com/go-semantic-release/semantic-release/) in that it has an option to write `.version` dotfile but for some reason, the aforementioned action deletes that file. https://github.com/go-semantic-release/action/issues/32. Addtionally, the variables `gitUserName` and `gitUserEmail` are added to save the changes made to `.version` file. In the future, work could be done to also (maybe conditionally) save updates to changelog file if it's defined.
+This is a highly specialized fork from [go-semantic-release/action](https://github.com/go-semantic-release/action/). 
+
+<!-- There were a couple features that were lacking for my personal use thus I created a fork. Namely, when a release is created, I needed the new version name to be written somewhere so that  I could easily implement a version command in the command line appliation that I am writing (or even a go package).   This is possible in the [semantic-release](https://github.com/go-semantic-release/semantic-release/) in that it has an option to write `.version` dotfile but for some reason, the aforementioned action deletes that file. https://github.com/go-semantic-release/action/issues/32. -->
+
 
 
 See my example workflow\
@@ -41,10 +44,6 @@ jobs:
         with:
           go-version: 1.21
       - uses: sumanchapai/go-semantic-release-action@0a66b54b093b23b711439a7daa38f92c4406ab0d
-        with:
-          hooks: goreleaser
-          gitUserName: geko
-          gitUserEmail: geko@example.com
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```

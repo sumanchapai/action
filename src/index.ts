@@ -24,94 +24,58 @@ async function installLatestSemRelVersion (): Promise<string> {
   return path
 }
 
-function getBooleanInput (name: string): boolean {
-  const inputValue = core.getInput(name)
-  if (!inputValue) return false
-  try {
-    return core.getBooleanInput(name)
-  } catch (e) {
-    core.warning(e)
-    core.warning(`assuming for input '${name}' that the value '${inputValue}' is true`)
-    return true
+async function runSemanticReleaseGo (binPath: string, dry: boolean): Promise<number> {
+  const args = ['--version-file', 'hooks', 'goreleaser']
+  if (dry) {
+    args.push('--dry')
   }
+  if (core.getInput('github-token')) {
+    args.push('--token')
+    args.push(core.getInput('github-token'))
+  }
+  return await exec.exec(binPath, args)
 }
+
+const dryVersionFileName = '.version-unreleased'
+const releasedVersionFileName = '.version'
 
 async function main (): Promise<void> {
   try {
-    const changelogFile = core.getInput('changelog-file') || '.generated-go-semantic-release-changelog.md'
-    let args = ['--version-file', '--changelog', changelogFile]
-    if (core.getInput('github-token')) {
-      args.push('--token')
-      args.push(core.getInput('github-token'))
-    }
-    if (getBooleanInput('prerelease')) {
-      args.push('--prerelease')
-    }
-    if (getBooleanInput('prepend')) {
-      args.push('--prepend-changelog')
-    }
-    if (getBooleanInput('dry')) {
-      args.push('--dry')
-    }
-    if (core.getInput('update-file')) {
-      args.push('--update')
-      args.push(core.getInput('update-file'))
-    }
-    if (getBooleanInput('ghr')) {
-      args.push('--ghr')
-    }
-    if (getBooleanInput('allow-initial-development-versions')) {
-      args.push('--allow-initial-development-versions')
-    }
-    if (getBooleanInput('force-bump-patch-version')) {
-      args.push('--force-bump-patch-version')
-    }
-    if (core.getInput('changelog-generator-opt')) {
-      const changelogOpts = core.getInput('changelog-generator-opt').split(',').filter(String)
-      for (let idx = 0; idx < changelogOpts.length; idx++) {
-        args.push('--changelog-generator-opt')
-        args.push(changelogOpts[idx])
-      }
-    }
-    if (core.getInput('hooks')) {
-      args.push('--hooks')
-      args.push(core.getInput('hooks'))
-    }
-    if (core.getInput('custom-arguments')) {
-      args = args.concat(core.getInput('custom-arguments').split(' ').filter(String))
-    }
-
-    let binPath = core.getInput('bin')
-    if (!binPath) binPath = await installLatestSemRelVersion()
-
-    const versionFilename = (core.getInput('dry')) ? '.version-unreleased' : '.version'
-    const gitUserEmail = (core.getInput('gitUserEmail')) || 'bot'
-    const gitUserName = (core.getInput('gitUserName')) || 'bot@example.com'
-
-    try {
-      core.info('running semantic-release...')
-      core.info(`running ${binPath} ${args}`)
-      const statusCode = await exec.exec(binPath, args)
-      if (statusCode === 0) {
-        core.info(`pushing ${versionFilename} file to git`)
-        await exec.exec('git', ['add', versionFilename])
-        // Setup git user name and email
-        await exec.exec('git', ['config', 'user.email', gitUserEmail])
-        await exec.exec('git', ['config', 'user.name', gitUserName])
-        await exec.exec('git', ['commit', '-m', 'release: update version'])
-        await exec.exec('git', ['push'])
-      }
-    } catch (error) {
-      if (/exit code 6\d/.test(error.message)) {
-        return
-      }
-      core.setFailed(error.message)
+    // First of all we run the semantic release in dry mode
+    // to get the proposed version number
+    // Binary path for semantic-release
+    const binPath = await installLatestSemRelVersion()
+    const statusCode = await runSemanticReleaseGo(binPath, true)
+    // exit if no new version to release or if got any other error
+    if (statusCode !== 0) {
       return
     }
-    const generatedChangelog = (await fs.readFile(changelogFile)).toString('utf8')
-    const version = (await fs.readFile(versionFilename)).toString('utf8')
+
+    // Setup git
+    // TODO, read from context
+    // const gitUserEmail = (core.getInput('gitUserEmail')) || 'bot'
+    // const gitUserName = (core.getInput('gitUserName')) || 'bot@example.com'
+    const gitUserEmail = 'bot'
+    const gitUserName = 'bot@example.com'
+    fs.rename(dryVersionFileName, releasedVersionFileName)
+    const version = (await fs.readFile(releasedVersionFileName)).toString('utf8')
     const parsedVersion = new SemVer(version)
-    core.setOutput('changelog', generatedChangelog)
+
+    // Setup git user name and email
+    await exec.exec('git', ['config', 'user.email', gitUserEmail])
+    await exec.exec('git', ['config', 'user.name', gitUserName])
+
+    // Push to git
+    core.info(`pushing ${releasedVersionFileName} file to git`)
+    await exec.exec('git', ['add', releasedVersionFileName])
+    await exec.exec('git', ['commit', '-m', 'release: update version'])
+    // We expect this git push to not trigger another action
+    // otherwise, actions will be created recursively
+    await exec.exec('git', ['push'])
+
+    // Now we create a release, we set dry mode to false
+    await runSemanticReleaseGo(binPath, false)
+
     core.debug(`setting version to ${parsedVersion.version}`)
     core.setOutput('version', parsedVersion.version)
     core.setOutput('version_major', `${parsedVersion.major}`)

@@ -18739,7 +18739,7 @@ var require_core = __commonJS({
       return inputs.map((input) => input.trim());
     }
     exports.getMultilineInput = getMultilineInput;
-    function getBooleanInput3(name, options) {
+    function getBooleanInput(name, options) {
       const trueValue = ["true", "True", "TRUE"];
       const falseValue = ["false", "False", "FALSE"];
       const val = getInput2(name, options);
@@ -18750,7 +18750,7 @@ var require_core = __commonJS({
       throw new TypeError(`Input does not meet YAML 1.2 "Core Schema" specification: ${name}
 Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
     }
-    exports.getBooleanInput = getBooleanInput3;
+    exports.getBooleanInput = getBooleanInput;
     function setOutput2(name, value) {
       const filePath = process.env["GITHUB_OUTPUT"] || "";
       if (filePath) {
@@ -18781,10 +18781,10 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
       command_1.issueCommand("error", utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
     }
     exports.error = error;
-    function warning2(message, properties = {}) {
+    function warning(message, properties = {}) {
       command_1.issueCommand("warning", utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
     }
-    exports.warning = warning2;
+    exports.warning = warning;
     function notice(message, properties = {}) {
       command_1.issueCommand("notice", utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
     }
@@ -24359,91 +24359,38 @@ async function installLatestSemRelVersion() {
   await import_fs.promises.chmod(path, "0755");
   return path;
 }
-function getBooleanInput2(name) {
-  const inputValue = core.getInput(name);
-  if (!inputValue)
-    return false;
-  try {
-    return core.getBooleanInput(name);
-  } catch (e) {
-    core.warning(e);
-    core.warning(`assuming for input '${name}' that the value '${inputValue}' is true`);
-    return true;
+async function runSemanticReleaseGo(binPath, dry) {
+  const args = ["--version-file", "hooks", "goreleaser"];
+  if (dry) {
+    args.push("--dry");
   }
+  if (core.getInput("github-token")) {
+    args.push("--token");
+    args.push(core.getInput("github-token"));
+  }
+  return await exec.exec(binPath, args);
 }
+var dryVersionFileName = ".version-unreleased";
+var releasedVersionFileName = ".version";
 async function main() {
   try {
-    const changelogFile = core.getInput("changelog-file") || ".generated-go-semantic-release-changelog.md";
-    let args = ["--version-file", "--changelog", changelogFile];
-    if (core.getInput("github-token")) {
-      args.push("--token");
-      args.push(core.getInput("github-token"));
-    }
-    if (getBooleanInput2("prerelease")) {
-      args.push("--prerelease");
-    }
-    if (getBooleanInput2("prepend")) {
-      args.push("--prepend-changelog");
-    }
-    if (getBooleanInput2("dry")) {
-      args.push("--dry");
-    }
-    if (core.getInput("update-file")) {
-      args.push("--update");
-      args.push(core.getInput("update-file"));
-    }
-    if (getBooleanInput2("ghr")) {
-      args.push("--ghr");
-    }
-    if (getBooleanInput2("allow-initial-development-versions")) {
-      args.push("--allow-initial-development-versions");
-    }
-    if (getBooleanInput2("force-bump-patch-version")) {
-      args.push("--force-bump-patch-version");
-    }
-    if (core.getInput("changelog-generator-opt")) {
-      const changelogOpts = core.getInput("changelog-generator-opt").split(",").filter(String);
-      for (let idx = 0; idx < changelogOpts.length; idx++) {
-        args.push("--changelog-generator-opt");
-        args.push(changelogOpts[idx]);
-      }
-    }
-    if (core.getInput("hooks")) {
-      args.push("--hooks");
-      args.push(core.getInput("hooks"));
-    }
-    if (core.getInput("custom-arguments")) {
-      args = args.concat(core.getInput("custom-arguments").split(" ").filter(String));
-    }
-    let binPath = core.getInput("bin");
-    if (!binPath)
-      binPath = await installLatestSemRelVersion();
-    const versionFilename = core.getInput("dry") ? ".version-unreleased" : ".version";
-    const gitUserEmail = core.getInput("gitUserEmail") || "bot";
-    const gitUserName = core.getInput("gitUserName") || "bot@example.com";
-    try {
-      core.info("running semantic-release...");
-      core.info(`running ${binPath} ${args}`);
-      const statusCode = await exec.exec(binPath, args);
-      if (statusCode === 0) {
-        core.info(`pushing ${versionFilename} file to git`);
-        await exec.exec("git", ["add", versionFilename]);
-        await exec.exec("git", ["config", "user.email", gitUserEmail]);
-        await exec.exec("git", ["config", "user.name", gitUserName]);
-        await exec.exec("git", ["commit", "-m", "release: update version"]);
-        await exec.exec("git", ["push"]);
-      }
-    } catch (error) {
-      if (/exit code 6\d/.test(error.message)) {
-        return;
-      }
-      core.setFailed(error.message);
+    const binPath = await installLatestSemRelVersion();
+    const statusCode = await runSemanticReleaseGo(binPath, true);
+    if (statusCode !== 0) {
       return;
     }
-    const generatedChangelog = (await import_fs.promises.readFile(changelogFile)).toString("utf8");
-    const version2 = (await import_fs.promises.readFile(versionFilename)).toString("utf8");
+    const gitUserEmail = "bot";
+    const gitUserName = "bot@example.com";
+    import_fs.promises.rename(dryVersionFileName, releasedVersionFileName);
+    const version2 = (await import_fs.promises.readFile(releasedVersionFileName)).toString("utf8");
     const parsedVersion = new import_semver.SemVer(version2);
-    core.setOutput("changelog", generatedChangelog);
+    await exec.exec("git", ["config", "user.email", gitUserEmail]);
+    await exec.exec("git", ["config", "user.name", gitUserName]);
+    core.info(`pushing ${releasedVersionFileName} file to git`);
+    await exec.exec("git", ["add", releasedVersionFileName]);
+    await exec.exec("git", ["commit", "-m", "release: update version"]);
+    await exec.exec("git", ["push"]);
+    await runSemanticReleaseGo(binPath, false);
     core.debug(`setting version to ${parsedVersion.version}`);
     core.setOutput("version", parsedVersion.version);
     core.setOutput("version_major", `${parsedVersion.major}`);
