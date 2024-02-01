@@ -1,45 +1,9 @@
-# go-semantic-release/action
+This is a fork from [go-semantic-release/action](https://github.com/go-semantic-release/action/). There were a couple features that were lacking for my personal use thus I created a fork. Namely, when a release is created, I needed the new version name to be written somewhere so that  I could easily implement a version command in the command line appliation that I am writing (or even a go package).   This is possible in the [semantic-release](https://github.com/go-semantic-release/semantic-release/) in that it has an option to write `.version` dotfile but for some reason, the aforementioned action deletes that file. https://github.com/go-semantic-release/action/issues/32. Addtionally, the variables `gitUserName` and `gitUserEmail` are added to save the changes made to `.version` file. In the future, work could be done to also (maybe conditionally) save updates to changelog file if it's defined.
 
-The official go-semantic-release GitHub Action.
 
-> :warning: This action always installs the [latest release](https://github.com/go-semantic-release/semantic-release/releases/latest) of go-semantic-release. Thus, the version of this repository is not linked to the used go-semantic-release version.
-
-## Usage
-
-To integrate [go-semantic-release](https://github.com/go-semantic-release/semantic-release) with your GitHub Actions pipeline, specify the name of this repository with a version tag as a step within your workflow config file:
-
-```yaml
-# If a 403 error occurs, make sure to set content permission to write
-# see: https://github.com/go-semantic-release/action/issues/27
-#permissions:
-#  contents: write
-
-steps:
-  - uses: actions/checkout@master
-  - uses: go-semantic-release/action@v1
-    with:
-      github-token: ${{ secrets.GITHUB_TOKEN }}
+See my example workflow\
+./github/workflow/ci.yml
 ```
-
-## Arguments
-
-| Input                                | Description                                                                                                                                                                                                                  | Usage    |
-|--------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
-| `github-token`                       | Used to create releases                                                                                                                                                                                                      | Required |
-| `changelog-file`                     | Create a changelog file (e.g CHANGELOG.md)                                                                                                                                                                                   | Optional |
-| `ghr`                                | Create a .ghr file with the parameters for [tcnksm/ghr](https://github.com/tcnksm/ghr)                                                                                                                                       | Optional |
-| `update-file`                        | Update the version of a certain file                                                                                                                                                                                         | Optional |
-| `dry`                                | Do not create a release                                                                                                                                                                                                      | Optional |
-| `prerelease`                         | Flags the release as a prerelease                                                                                                                                                                                            | Optional |
-| `allow-initial-development-versions` | semantic-release will start your initial development release at 0.1.0 and will handle breaking changes as minor version updates. This option will be ignored if a release with major version greater than or equal 1 exists. | Optional |
-| `force-bump-patch-version`           | Increments the patch version if no changes are found                                                                                                                                                                         | Optional |
-| `changelog-generator-opt`            | Options that are passed to the changelog-generator plugin. Seperated by ","                                                                                                                                                  | Optional |
-| `prepend`                            | Flag changes to be prepended into the changelog file                                                                                                                                                                         | Optional |
-| `hooks`                              | Enable different hooks plugins. Seperated by ","                                                                                                                                                                             | Optional |
-
-## Example `ci.yml` for a npm package
-
-```yaml
 name: CI
 on:
   push:
@@ -48,49 +12,39 @@ on:
   pull_request:
     branches:
       - '**'
-
-# If a 403 error occurs, make sure to set content permission to write
-# see: https://github.com/go-semantic-release/action/issues/27
-#permissions:
-#  contents: write
-
 jobs:
-  build:
+  lint:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: true
-      matrix:
-        node: [10, 12]
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
-          node-version: ${{ matrix.node }}
-      - run: npm ci
-      - run: npm test
+          go-version: 1.21
+      - uses: golangci/golangci-lint-action@v3
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.21
+      - run: go test -v ./...
   release:
     runs-on: ubuntu-latest
-    needs: build
+    needs: test
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
-          node-version: 12
-          registry-url: 'https://registry.npmjs.org'
-      - uses: go-semantic-release/action@v1
-        id: semrel
+          go-version: 1.21
+      - uses: sumanchapai/go-semantic-release-action@0a66b54b093b23b711439a7daa38f92c4406ab0d
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          update-file: package.json
-          changelog-generator-opt: "emojis=true"
-      - run: npm publish
-        if: steps.semrel.outputs.version != ''
+          hooks: goreleaser
+          gitUserName: geko
+          gitUserEmail: geko@example.com
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
-
-## License
-
-The [MIT License (MIT)](http://opensource.org/licenses/MIT)
-
-Copyright © 2023 [Christoph Witzko](https://github.com/christophwitzko)
