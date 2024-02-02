@@ -24363,7 +24363,7 @@ async function runSemanticReleaseGo(binPath, dry) {
   const args = [
     "--version-file",
     // enable generating version file
-    "hooks",
+    "--hooks",
     "goreleaser",
     // hooks is an array of strings
     "--files-updater",

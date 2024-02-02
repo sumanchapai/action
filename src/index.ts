@@ -27,7 +27,7 @@ async function installLatestSemRelVersion (): Promise<string> {
 async function runSemanticReleaseGo (binPath: string, dry: boolean): Promise<number> {
   const args = [
     '--version-file', // enable generating version file
-    'hooks', 'goreleaser', // hooks is an array of strings
+    '--hooks', 'goreleaser', // hooks is an array of strings
     '--files-updater', '' // clear out default files-updater by defning it to be empty str
   ]
   if (dry) {
