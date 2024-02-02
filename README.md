@@ -1,6 +1,6 @@
-**This is a highly specialized fork from [go-semantic-release/action](https://github.com/go-semantic-release/action/). Use the original version for specific needs.**
+**This is a highly specialized fork from [go-semantic-release/action](https://github.com/go-semantic-release/action/).**
 
-This fork address the the problem of updating the version number before creating a build so the new release has the new release version. This is useful when you create something like a `version` subcommand for your cli or something like that (recall `git version`). When a new release is created, the version has to be incremented and only then the release has to be created so that the `cli` has access the the updated version number. This actions takes the following steps:
+This fork addresses the the problem of updating the version number before creating a build so the new release has the new release version. This is useful when you create something like a `version` subcommand for your cli (recall `git version`). When a new release is created, the version has to be incremented and only then the release has to be created so that the `cli` has access the the updated version number. This actions takes the following steps:
 
 1. Create a dry release and check if new release would be created. 
 1. Exit if no new release is to be created.
@@ -8,7 +8,7 @@ This fork address the the problem of updating the version number before creating
 1. Create an actual release.
 
 
-This action runs the `goreleaser` hook by default. There's not much customization you can do using this hook. Something that you might needs is to run custom command between the dry-release and the actual release. You can do so by passing the input to the key `pre-release-post-dry-cmd`. Also, see the example CI below and check `action.yml` for the inputs and outputs.
+This action runs the `goreleaser` hook by default. There's not much customization you can do using this hook. It allows you to run custom command between the dry-release and the actual release. You can do so by passing the input to the key `pre-release-post-dry-cmd`. Also, see the example CI below and check `action.yml` for the inputs and outputs.
 
 
 
