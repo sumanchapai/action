@@ -2993,9 +2993,9 @@ var require_multipart = __commonJS({
               return;
             }
             ++nends;
-            const file = new FileStream(fileOpts);
-            curFile = file;
-            file.on("end", function() {
+            const file2 = new FileStream(fileOpts);
+            curFile = file2;
+            file2.on("end", function() {
               --nends;
               self._pause = false;
               checkFinished();
@@ -3005,7 +3005,7 @@ var require_multipart = __commonJS({
                 cb();
               }
             });
-            file._read = function(n) {
+            file2._read = function(n) {
               if (!self._pause) {
                 return;
               }
@@ -3016,26 +3016,26 @@ var require_multipart = __commonJS({
                 cb();
               }
             };
-            boy.emit("file", fieldname, file, filename, encoding, contype);
+            boy.emit("file", fieldname, file2, filename, encoding, contype);
             onData = function(data) {
               if ((nsize += data.length) > fileSizeLimit) {
                 const extralen = fileSizeLimit - nsize + data.length;
                 if (extralen > 0) {
-                  file.push(data.slice(0, extralen));
+                  file2.push(data.slice(0, extralen));
                 }
-                file.truncated = true;
-                file.bytesRead = fileSizeLimit;
+                file2.truncated = true;
+                file2.bytesRead = fileSizeLimit;
                 part.removeAllListeners("data");
-                file.emit("limit");
+                file2.emit("limit");
                 return;
-              } else if (!file.push(data)) {
+              } else if (!file2.push(data)) {
                 self._pause = true;
               }
-              file.bytesRead = nsize;
+              file2.bytesRead = nsize;
             };
             onEnd = function() {
               curFile = void 0;
-              file.push(null);
+              file2.push(null);
             };
           } else {
             if (nfields === fieldsLimit) {
@@ -21106,12 +21106,12 @@ var require_manifest = __commonJS({
         const platFilter = os.platform();
         let result;
         let match;
-        let file;
+        let file2;
         for (const candidate of candidates) {
           const version2 = candidate.version;
           core_1.debug(`check ${version2} satisfies ${versionSpec}`);
           if (semver.satisfies(version2, versionSpec) && (!stable || candidate.stable === stable)) {
-            file = candidate.files.find((item) => {
+            file2 = candidate.files.find((item) => {
               core_1.debug(`${item.arch}===${archFilter} && ${item.platform}===${platFilter}`);
               let chk = item.arch === archFilter && item.platform === platFilter;
               if (chk && item.platform_version) {
@@ -21124,16 +21124,16 @@ var require_manifest = __commonJS({
               }
               return chk;
             });
-            if (file) {
+            if (file2) {
               core_1.debug(`matched ${candidate.version}`);
               match = candidate;
               break;
             }
           }
         }
-        if (match && file) {
+        if (match && file2) {
           result = Object.assign({}, match);
-          result.files = [file];
+          result.files = [file2];
         }
         return result;
       });
@@ -21510,10 +21510,10 @@ var require_tool_cache = __commonJS({
         }
       });
     }
-    function extract7z(file, dest, _7zPath) {
+    function extract7z(file2, dest, _7zPath) {
       return __awaiter(this, void 0, void 0, function* () {
         assert_1.ok(IS_WINDOWS, "extract7z() not supported on current OS");
-        assert_1.ok(file, 'parameter "file" is required');
+        assert_1.ok(file2, 'parameter "file" is required');
         dest = yield _createExtractFolder(dest);
         const originalCwd = process.cwd();
         process.chdir(dest);
@@ -21525,7 +21525,7 @@ var require_tool_cache = __commonJS({
               logLevel,
               "-bd",
               "-sccUTF-8",
-              file
+              file2
             ];
             const options = {
               silent: true
@@ -21536,7 +21536,7 @@ var require_tool_cache = __commonJS({
           }
         } else {
           const escapedScript = path.join(__dirname, "..", "scripts", "Invoke-7zdec.ps1").replace(/'/g, "''").replace(/"|\n|\r/g, "");
-          const escapedFile = file.replace(/'/g, "''").replace(/"|\n|\r/g, "");
+          const escapedFile = file2.replace(/'/g, "''").replace(/"|\n|\r/g, "");
           const escapedTarget = dest.replace(/'/g, "''").replace(/"|\n|\r/g, "");
           const command = `& '${escapedScript}' -Source '${escapedFile}' -Target '${escapedTarget}'`;
           const args = [
@@ -21563,9 +21563,9 @@ var require_tool_cache = __commonJS({
       });
     }
     exports.extract7z = extract7z;
-    function extractTar(file, dest, flags = "xz") {
+    function extractTar(file2, dest, flags = "xz") {
       return __awaiter(this, void 0, void 0, function* () {
-        if (!file) {
+        if (!file2) {
           throw new Error("parameter 'file' is required");
         }
         dest = yield _createExtractFolder(dest);
@@ -21591,11 +21591,11 @@ var require_tool_cache = __commonJS({
           args.push("-v");
         }
         let destArg = dest;
-        let fileArg = file;
+        let fileArg = file2;
         if (IS_WINDOWS && isGnuTar) {
           args.push("--force-local");
           destArg = dest.replace(/\\/g, "/");
-          fileArg = file.replace(/\\/g, "/");
+          fileArg = file2.replace(/\\/g, "/");
         }
         if (isGnuTar) {
           args.push("--warning=no-unknown-keyword");
@@ -21607,10 +21607,10 @@ var require_tool_cache = __commonJS({
       });
     }
     exports.extractTar = extractTar;
-    function extractXar(file, dest, flags = []) {
+    function extractXar(file2, dest, flags = []) {
       return __awaiter(this, void 0, void 0, function* () {
         assert_1.ok(IS_MAC, "extractXar() not supported on current OS");
-        assert_1.ok(file, 'parameter "file" is required');
+        assert_1.ok(file2, 'parameter "file" is required');
         dest = yield _createExtractFolder(dest);
         let args;
         if (flags instanceof Array) {
@@ -21618,7 +21618,7 @@ var require_tool_cache = __commonJS({
         } else {
           args = [flags];
         }
-        args.push("-x", "-C", dest, "-f", file);
+        args.push("-x", "-C", dest, "-f", file2);
         if (core2.isDebug()) {
           args.push("-v");
         }
@@ -21628,24 +21628,24 @@ var require_tool_cache = __commonJS({
       });
     }
     exports.extractXar = extractXar;
-    function extractZip(file, dest) {
+    function extractZip(file2, dest) {
       return __awaiter(this, void 0, void 0, function* () {
-        if (!file) {
+        if (!file2) {
           throw new Error("parameter 'file' is required");
         }
         dest = yield _createExtractFolder(dest);
         if (IS_WINDOWS) {
-          yield extractZipWin(file, dest);
+          yield extractZipWin(file2, dest);
         } else {
-          yield extractZipNix(file, dest);
+          yield extractZipNix(file2, dest);
         }
         return dest;
       });
     }
     exports.extractZip = extractZip;
-    function extractZipWin(file, dest) {
+    function extractZipWin(file2, dest) {
       return __awaiter(this, void 0, void 0, function* () {
-        const escapedFile = file.replace(/'/g, "''").replace(/"|\n|\r/g, "");
+        const escapedFile = file2.replace(/'/g, "''").replace(/"|\n|\r/g, "");
         const escapedDest = dest.replace(/'/g, "''").replace(/"|\n|\r/g, "");
         const pwshPath = yield io.which("pwsh", false);
         if (pwshPath) {
@@ -21689,10 +21689,10 @@ var require_tool_cache = __commonJS({
         }
       });
     }
-    function extractZipNix(file, dest) {
+    function extractZipNix(file2, dest) {
       return __awaiter(this, void 0, void 0, function* () {
         const unzipPath = yield io.which("unzip", true);
-        const args = [file];
+        const args = [file2];
         if (!core2.isDebug()) {
           args.unshift("-q");
         }
@@ -24337,7 +24337,7 @@ var require_semver3 = __commonJS({
 });
 
 // src/index.ts
-var import_fs = require("fs");
+var import_fs = __toESM(require("fs"));
 var import_os = require("os");
 var core = __toESM(require_core());
 var exec = __toESM(require_exec());
@@ -24386,12 +24386,12 @@ async function main() {
   try {
     const binPath = await installLatestSemRelVersion();
     const statusCode = await runSemanticReleaseGo(binPath, true);
-    if (statusCode !== 0) {
+    if (!import_fs.default.existsSync(dryVersionFileName) || statusCode !== 0) {
       return;
     }
     const gitUserEmail = "releasebot";
     const gitUserName = `${gitUserEmail}@users.noreply.github.com`;
-    import_fs.promises.rename(dryVersionFileName, releasedVersionFileName);
+    await import_fs.promises.rename(dryVersionFileName, releasedVersionFileName);
     const version2 = (await import_fs.promises.readFile(releasedVersionFileName)).toString("utf8");
     const parsedVersion = new import_semver.SemVer(version2);
     if (core.getInput("pre-release-post-dry-cmd")) {

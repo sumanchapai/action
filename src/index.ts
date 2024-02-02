@@ -1,4 +1,4 @@
-import { promises as fs } from 'fs'
+import file, { promises as fs } from 'fs'
 import { arch, platform } from 'os'
 
 import * as core from '@actions/core'
@@ -52,7 +52,7 @@ async function main (): Promise<void> {
     const binPath = await installLatestSemRelVersion()
     const statusCode = await runSemanticReleaseGo(binPath, true)
     // exit if no new version to release or if got any other error
-    if (statusCode !== 0) {
+    if (!file.existsSync(dryVersionFileName) || statusCode !== 0) {
       return
     }
 
@@ -60,7 +60,7 @@ async function main (): Promise<void> {
     // TODO, read from context
     const gitUserEmail = 'releasebot'
     const gitUserName = `${gitUserEmail}@users.noreply.github.com`
-    fs.rename(dryVersionFileName, releasedVersionFileName)
+    await fs.rename(dryVersionFileName, releasedVersionFileName)
     const version = (await fs.readFile(releasedVersionFileName)).toString('utf8')
     const parsedVersion = new SemVer(version)
 
