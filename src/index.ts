@@ -57,10 +57,8 @@ async function main (): Promise<void> {
 
     // Setup git
     // TODO, read from context
-    // const gitUserEmail = (core.getInput('gitUserEmail')) || 'bot'
-    // const gitUserName = (core.getInput('gitUserName')) || 'bot@example.com'
-    const gitUserEmail = 'bot'
-    const gitUserName = 'bot@example.com'
+    const gitUserEmail = 'releasebot'
+    const gitUserName = `${gitUserEmail}@users.noreply.github.com`
     fs.rename(dryVersionFileName, releasedVersionFileName)
     const version = (await fs.readFile(releasedVersionFileName)).toString('utf8')
     const parsedVersion = new SemVer(version)

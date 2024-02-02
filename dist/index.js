@@ -24388,8 +24388,8 @@ async function main() {
     if (statusCode !== 0) {
       return;
     }
-    const gitUserEmail = "bot";
-    const gitUserName = "bot@example.com";
+    const gitUserEmail = "releasebot";
+    const gitUserName = `${gitUserEmail}@users.noreply.github.com`;
     import_fs.promises.rename(dryVersionFileName, releasedVersionFileName);
     const version2 = (await import_fs.promises.readFile(releasedVersionFileName)).toString("utf8");
     const parsedVersion = new import_semver.SemVer(version2);
