@@ -24372,6 +24372,7 @@ async function runSemanticReleaseGo(binPath, dry) {
   ];
   if (dry) {
     args.push("--dry");
+    args.push("--allow-no-changes");
   }
   if (core.getInput("github-token")) {
     args.push("--token");
